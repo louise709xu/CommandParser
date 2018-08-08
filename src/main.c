@@ -27,7 +27,6 @@ UARTDRV_Handle_t handle = &handleData;
 
 uint8_t txBuffer[64];
 uint8_t rxBuffer[64];
-uint8_t commandBuffer[4];
 
 void callback_TX(UARTDRV_Handle_t handle,
               Ecode_t transferStatus,
@@ -54,6 +53,9 @@ void callback_RX(UARTDRV_Handle_t handle,
 }
 
 int main(void) {
+  uint32_t cmmd_code = 'tiuq';
+  char* commandBuffer_ptr;
+  commandBuffer_ptr = (char*)&cmmd_code;
   UARTDRV_InitUart_t initData = MY_UART;
   UARTDRV_InitUart(handle, &initData);
 
@@ -63,19 +65,29 @@ int main(void) {
   int i = 0;
 
   while(1){
-	  UARTDRV_ReceiveB(handle, rxBuffer, 1);
-	  UARTDRV_Transmit(handle, rxBuffer, 1, callback_TX);
+    UARTDRV_ReceiveB(handle, rxBuffer, 1);
+	UARTDRV_Transmit(handle, rxBuffer, 1, callback_TX);
 
-	  if(rxBuffer[0] != '\n' && rxBuffer[0] != '\r'){
-		  commandBuffer[i%4] = rxBuffer[0];
-		  i++;
+	if(rxBuffer[0] != '\n' && rxBuffer[0] != '\r'){
+      commandBuffer_ptr[i%4] = rxBuffer[0];
+      i++;
+	}
+	else {
+	  i = 0;
+	  /*
+	  if(strcmp(commandBuffer, "quit") == 0){
+	    UARTDRV_Transmit(handle, txBuffer, strlen(txBuffer), callback_TX);
 	  }
-	  else {
-		  i = 0;
-		  if(strcmp(commandBuffer, "quit") == 0){
-			  UARTDRV_Transmit(handle, txBuffer, strlen(txBuffer), callback_TX);
-		  }
-	  }
+	  */
+	  switch(cmmd_code) {
+	    case 'tiuq':
+	      UARTDRV_Transmit(handle, txBuffer, strlen(txBuffer), callback_TX);
+		  break;
+
+	    default:
+	      break;
+      }
+	}
   }
 
 }
